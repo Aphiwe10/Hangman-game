@@ -1,5 +1,5 @@
+// src/components/Hangman.js
 import React, { Component } from "react";
-
 import step1 from "../assets/hangman_drawings/state1.GIF";
 import step10 from "../assets/hangman_drawings/state10.gif";
 import step11 from "../assets/hangman_drawings/state11.GIF";
@@ -11,11 +11,15 @@ import step6 from "../assets/hangman_drawings/state6.GIF";
 import step7 from "../assets/hangman_drawings/state7.GIF";
 import step8 from "../assets/hangman_drawings/state8.GIF";
 import step9 from "../assets/hangman_drawings/state9.GIF";
-import "../Hangman.css"; // Styles for the component
+import AlphabetButtons from "./AlphabetButtons";
+import GameBoard from "./GameBoard";
+import GameStatus from "./GameStatus";
+import "./Hangman.css"; // Import CSS for styling
+import HelpModal from "./HelpModal";
 
 class Hangman extends Component {
   static defaultProps = {
-    maxWrong: 10, // Maximum mistakes allowed
+    maxWrong: 10,
     images: [
       step1,
       step2,
@@ -46,7 +50,7 @@ class Hangman extends Component {
       "haskell",
       "elixir",
       "clojure",
-    ], // List of programming languages
+    ],
   };
 
   constructor(props) {
@@ -54,31 +58,23 @@ class Hangman extends Component {
     this.state = {
       mistake: 0,
       guessed: new Set(),
-      answer: this.randomWord(), // Initialize with a random word
+      answer: this.randomWord(),
+      isHelpModalOpen: false, // Track help modal visibility
+      revealedLetters: [],
     };
   }
 
-  /**
-   * Pick a random word from the word list
-   */
-  randomWord() {
+  randomWord = () => {
     const { wordList } = this.props;
     return wordList[Math.floor(Math.random() * wordList.length)];
-  }
+  };
 
-  /**
-   * Generate the current guessed word
-   */
-  guessedWord() {
-    return this.state.answer
+  guessedWord = () =>
+    this.state.answer
       .split("")
       .map((letter) => (this.state.guessed.has(letter) ? letter : "_"))
       .join(" ");
-  }
 
-  /**
-   * Handle letter button clicks
-   */
   handleGuess = (evt) => {
     const letter = evt.target.value;
     this.setState((st) => ({
@@ -87,62 +83,62 @@ class Hangman extends Component {
     }));
   };
 
-  /**
-   * Generate alphabet buttons
-   */
-  generateButtons() {
-    return "abcdefghijklmnopqrstuvwxyz".split("").map((letter) => (
-      <button
-        key={letter}
-        value={letter}
-        onClick={this.handleGuess}
-        disabled={this.state.guessed.has(letter)}
-        className="letter-button"
-      >
-        {letter}
-      </button>
-    ));
-  }
-
-  /**
-   * Reset the game
-   */
   resetGame = () => {
     this.setState({
       mistake: 0,
       guessed: new Set(),
       answer: this.randomWord(),
+      revealedLetters: [], // Reset revealed letters on game reset
     });
   };
 
+  toggleHelpModal = () => {
+    this.setState((st) => ({ isHelpModalOpen: !st.isHelpModalOpen }));
+  };
+
+  setRevealedLetters = (newRevealedLetters) => {
+    this.setState({ revealedLetters: newRevealedLetters });
+  };
+
   render() {
-    const { mistake, answer } = this.state;
+    const { mistake, answer, isHelpModalOpen, revealedLetters } = this.state;
     const { maxWrong, images } = this.props;
 
     const isWinner = this.guessedWord().replace(/ /g, "") === answer;
     const gameOver = mistake >= maxWrong;
 
-    let gameState = this.generateButtons();
-    if (isWinner) gameState = <p className="win-message">🎉 You Win!</p>;
-    if (gameOver)
-      gameState = (
-        <p className="lose-message">❌ You Lose! The word was "{answer}".</p>
-      );
-
     return (
       <div className="Hangman">
-        <h1>Hangman - Guess the Programming Language</h1>
-        <img src={images[mistake]} alt={`${mistake}/${maxWrong} mistakes`} />
-        <p>
-          Wrong guesses: {mistake} of {maxWrong}
-        </p>
-        <p className="Hangman-word">
-          {!gameOver ? this.guessedWord() : answer}
-        </p>
-        <div className="Hangman-btns">{gameState}</div>
+        <GameBoard
+          mistake={mistake}
+          maxWrong={maxWrong}
+          guessedWord={this.guessedWord()}
+          gameOver={gameOver}
+          answer={answer}
+          images={images}
+        />
+        <GameStatus isWinner={isWinner} gameOver={gameOver} answer={answer} />
+        {!isWinner && !gameOver && (
+          <AlphabetButtons
+            guessed={this.state.guessed}
+            onGuess={this.handleGuess}
+          />
+        )}
         <button className="reset-button" onClick={this.resetGame}>
           Restart Game
         </button>
+        <button className="hint-button" onClick={this.toggleHelpModal}>
+          Help
+        </button>
+        {isHelpModalOpen && (
+          <HelpModal
+            isOpen={isHelpModalOpen}
+            onClose={this.toggleHelpModal}
+            secretWord={answer}
+            revealedLetters={revealedLetters}
+            setRevealedLetters={this.setRevealedLetters}
+          />
+        )}
       </div>
     );
   }
