@@ -1,4 +1,3 @@
-// src/components/Hangman.js
 import React, { Component } from "react";
 import step1 from "../assets/hangman_drawings/state1.GIF";
 import step10 from "../assets/hangman_drawings/state10.gif";
@@ -15,11 +14,15 @@ import AlphabetButtons from "./AlphabetButtons";
 import GameBoard from "./GameBoard";
 import GameStatus from "./GameStatus";
 import "./Hangman.css"; // Import CSS for styling
-import HelpModal from "./HelpModal";
+import HelpModal from "./HelpModal"; // Import HelpModal component
 
+/**
+ * Hangman Component
+ * Handles the main game logic and UI for the Hangman game.
+ */
 class Hangman extends Component {
   static defaultProps = {
-    maxWrong: 10,
+    maxWrong: 10, // Maximum mistakes allowed before losing
     images: [
       step1,
       step2,
@@ -32,7 +35,7 @@ class Hangman extends Component {
       step9,
       step10,
       step11,
-    ],
+    ], // Hangman drawing images
     wordList: [
       "javascript",
       "python",
@@ -50,31 +53,39 @@ class Hangman extends Component {
       "haskell",
       "elixir",
       "clojure",
-    ],
+    ], // List of possible secret words
   };
 
   constructor(props) {
     super(props);
     this.state = {
-      mistake: 0,
-      guessed: new Set(),
-      answer: this.randomWord(),
-      isHelpModalOpen: false, // Track help modal visibility
-      revealedLetters: [],
+      mistake: 0, // Number of mistakes made
+      guessed: new Set(), // Set of guessed letters
+      answer: this.randomWord(), // The secret word to guess
+      isHelpModalOpen: false, // Tracks whether the help modal is visible
     };
   }
 
+  /**
+   * Selects a random word from the word list.
+   */
   randomWord = () => {
     const { wordList } = this.props;
     return wordList[Math.floor(Math.random() * wordList.length)];
   };
 
+  /**
+   * Generates the current guessed word with unguessed letters as underscores.
+   */
   guessedWord = () =>
     this.state.answer
       .split("")
       .map((letter) => (this.state.guessed.has(letter) ? letter : "_"))
       .join(" ");
 
+  /**
+   * Handles a letter guess by updating the guessed set and mistakes count.
+   */
   handleGuess = (evt) => {
     const letter = evt.target.value;
     this.setState((st) => ({
@@ -83,32 +94,35 @@ class Hangman extends Component {
     }));
   };
 
+  /**
+   * Resets the game state to start a new game.
+   */
   resetGame = () => {
     this.setState({
       mistake: 0,
       guessed: new Set(),
       answer: this.randomWord(),
-      revealedLetters: [], // Reset revealed letters on game reset
     });
   };
 
+  /**
+   * Toggles the visibility of the HelpModal.
+   */
   toggleHelpModal = () => {
     this.setState((st) => ({ isHelpModalOpen: !st.isHelpModalOpen }));
   };
 
-  setRevealedLetters = (newRevealedLetters) => {
-    this.setState({ revealedLetters: newRevealedLetters });
-  };
-
   render() {
-    const { mistake, answer, isHelpModalOpen, revealedLetters } = this.state;
+    const { mistake, answer, isHelpModalOpen } = this.state;
     const { maxWrong, images } = this.props;
 
+    // Check if the player has won or lost the game
     const isWinner = this.guessedWord().replace(/ /g, "") === answer;
     const gameOver = mistake >= maxWrong;
 
     return (
       <div className="Hangman">
+        {/* Display the game board */}
         <GameBoard
           mistake={mistake}
           maxWrong={maxWrong}
@@ -117,28 +131,30 @@ class Hangman extends Component {
           answer={answer}
           images={images}
         />
+
+        {/* Display the game status */}
         <GameStatus isWinner={isWinner} gameOver={gameOver} answer={answer} />
+
+        {/* Alphabet buttons for guessing letters */}
         {!isWinner && !gameOver && (
           <AlphabetButtons
             guessed={this.state.guessed}
             onGuess={this.handleGuess}
           />
         )}
+
+        {/* Restart game button */}
         <button className="reset-button" onClick={this.resetGame}>
           Restart Game
         </button>
+
+        {/* Help button */}
         <button className="hint-button" onClick={this.toggleHelpModal}>
           Help
         </button>
-        {isHelpModalOpen && (
-          <HelpModal
-            isOpen={isHelpModalOpen}
-            onClose={this.toggleHelpModal}
-            secretWord={answer}
-            revealedLetters={revealedLetters}
-            setRevealedLetters={this.setRevealedLetters}
-          />
-        )}
+
+        {/* Help modal */}
+        <HelpModal isOpen={isHelpModalOpen} onClose={this.toggleHelpModal} />
       </div>
     );
   }
